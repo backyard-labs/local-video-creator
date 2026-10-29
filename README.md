@@ -4,6 +4,22 @@ A guided, Windows-first Python command-line tool for turning a folder of photogr
 
 **Status:** Early CLI release (v0.10). This is a personal, experimental tool, not a polished graphical editor. The `gui/` directory is not part of the documented release workflow.
 
+## How AI is used
+
+Local Video Creator combines a conventional video-processing engine with optional AI assistance.
+
+**Core video creation — no AI required**
+
+Python, Pillow, and FFmpeg handle photograph processing, storyboard creation, Ken Burns zoom/pan effects, background music, cinematic titles, and video rendering. These features work without Ollama.
+
+**AI-assisted features — Ollama required**
+
+Ollama is currently the application's only supported AI inference provider. The tested local model, `qwen3.5:9b`, supports photograph analysis and AI-generated title suggestions. AI-generated motion recommendations may also be used when available and approved.
+
+If Ollama is not installed or AI analysis is skipped, the application continues using its conventional video-processing capabilities. No alternative AI provider automatically takes over.
+
+**AI-assisted development is different from AI-powered operation.** AI coding assistants helped develop this application, but users do not need an AI model to create videos.
+
 ## Quick start (Windows / PowerShell)
 
 ### Prerequisites
@@ -11,7 +27,7 @@ A guided, Windows-first Python command-line tool for turning a folder of photogr
 - **Python:** Developed and tested using Python 3.14. Other versions have not been verified for this release.
 - **FFmpeg:** Install an FFmpeg distribution containing both `ffmpeg` and `ffprobe`; ensure both executables are available on your system `PATH`.
 - **Pillow:** Installed using `requirements.txt`.
-- **Optional — Ollama:** Install and run Ollama if you want local AI photograph analysis or title suggestions. The tested model is `qwen3.5:9b`. Video creation does not require Ollama when AI features are skipped.
+- **Optional — Ollama:** Install and run Ollama if you want local AI photograph analysis or title suggestions. Ollama is the only AI provider currently supported. The tested model is `qwen3.5:9b`. Video creation does not require Ollama when AI features are skipped.
 
 From the repository root:
 
@@ -137,4 +153,4 @@ The project owner defined the goals, requirements, creative direction, workflows
 
 ## License
 
-See `LICENSE` once the repository's license is selected and added. Until then, do not assume the source code is offered under an open-source license.
+Local Video Creator is distributed under the MIT License. See [LICENSE](LICENSE) for details.
