@@ -1,46 +1,48 @@
 # Local Video Creator
 
-A guided, Windows-first Python command-line tool for turning a folder of photographs into a vertical video. Build a storyboard, review a numbered contact sheet, render static or gently animated images, and optionally add background music and a cinematic title. Optional local Ollama analysis helps describe photographs and suggest a title.
+Local Video Creator is a guided, Windows-first Python command-line application for turning photographs into vertical videos. It creates a numbered contact sheet and CSV storyboard, renders still images or gentle Ken Burns motion, and can add MP3 background music and a cinematic title. Optional **local Ollama AI** can describe photographs and suggest titles.
 
-**Status:** Early CLI release (v0.10). This is a personal, experimental tool, not a polished graphical editor. The `gui/` directory is not part of the documented release workflow.
+**Status:** Early, experimental CLI release (v0.10). A graphical editor, Windows installer, and broad cross-platform support are **not** included in the published release.
 
 ## How AI is used
 
-Local Video Creator combines a conventional video-processing engine with optional AI assistance.
+**Core video creation does not require AI.** Python, Pillow, and FFmpeg handle photo preparation, storyboard creation, conventional Ken Burns motion, background music, titles, and video rendering. These features work when Ollama is unavailable or skipped.
 
-**Core video creation — no AI required**
+**Optional AI features require Ollama.** The only integrated AI inference provider in v0.10 is a local Ollama service. The tested model, `qwen3.5:9b`, supports photograph descriptions and title suggestions. The renderer can also use **previously saved, human-approved** motion recommendations where available; the main video-creation CLI does **not** automatically request new AI motion recommendations during rendering. Otherwise it uses conventional fallback motion.
 
-Python, Pillow, and FFmpeg handle photograph processing, storyboard creation, Ken Burns zoom/pan effects, background music, cinematic titles, and video rendering. These features work without Ollama.
+AI-generated descriptions and suggestions require human review. No cloud AI provider automatically takes over if Ollama is unavailable.
 
-**AI-assisted features — Ollama required**
-
-Ollama is currently the application's only supported AI inference provider. The tested local model, `qwen3.5:9b`, supports photograph analysis and AI-generated title suggestions. AI-generated motion recommendations may also be used when available and approved.
-
-If Ollama is not installed or AI analysis is skipped, the application continues using its conventional video-processing capabilities. No alternative AI provider automatically takes over.
-
-**AI-assisted development is different from AI-powered operation.** AI coding assistants helped develop this application, but users do not need an AI model to create videos.
+**AI-assisted development is different from AI-powered operation:** AI coding assistants contributed to building this software, but no AI model is required to create a video.
 
 ## Quick start (Windows / PowerShell)
 
 ### Prerequisites
 
-- **Python:** Developed and tested using Python 3.14. Other versions have not been verified for this release.
-- **FFmpeg:** Install an FFmpeg distribution containing both `ffmpeg` and `ffprobe`; ensure both executables are available on your system `PATH`.
-- **Pillow:** Installed using `requirements.txt`.
-- **Optional — Ollama:** Install and run Ollama if you want local AI photograph analysis or title suggestions. Ollama is the only AI provider currently supported. The tested model is `qwen3.5:9b`. Video creation does not require Ollama when AI features are skipped.
+- **Python:** Developed and tested with Python 3.14; other versions have not been verified for this release.
+- **FFmpeg and FFprobe:** Install an FFmpeg distribution containing both executables and make sure both are on your `PATH`.
+- **Pillow:** Installed from `requirements.txt`.
+- **Optional Ollama:** Needed only for local AI features. The tested model is `qwen3.5:9b`.
 
-From the repository root:
+### Get and run the application
+
+Clone the public repository with Git:
 
 ```powershell
+git clone https://github.com/backyard-labs/local-video-creator.git
+cd local-video-creator
 python -m pip install -r requirements.txt
 ffmpeg -version
 ffprobe -version
 python -m cli.main
 ```
 
-If Python is not found, install Python and reopen PowerShell. If FFmpeg commands are not found, fix the FFmpeg installation and `PATH` before rendering.
+Alternatively, download the repository's source ZIP from GitHub, extract it, open PowerShell in the extracted project directory, and run the installation and launch commands starting with `python -m pip install -r requirements.txt`.
 
-For optional local AI, start Ollama, ensure the model is available, and then run the CLI:
+If `python`, `ffmpeg`, or `ffprobe` is not recognized, install the missing program, check your `PATH`, and reopen PowerShell.
+
+### Enable optional local AI
+
+Install and start Ollama, then download the tested model:
 
 ```powershell
 ollama pull qwen3.5:9b
@@ -48,100 +50,126 @@ ollama list
 python -m cli.main
 ```
 
-The AI integration expects a local Ollama service (normally `http://localhost:11434`). Ollama setup and model download require an internet connection; the analysis itself is intended to run locally once the model is installed.
+The AI integration expects a local Ollama service at `http://127.0.0.1:11434`. Internet access is needed to obtain Ollama and download the model, but the application is designed to send its AI requests to the local Ollama endpoint. Without Ollama, skip AI analysis and enter a title manually if desired.
 
 ## User manual
 
 ### 1. Create or reopen a project
 
-Launch `python -m cli.main`. At the project prompt, **enter a descriptive project name. Spaces are allowed; folder names are generated automatically.** For example, `Autumn Morning Walk` becomes `projects/autumn-morning-walk/`. Confirm creation, or choose to reuse an existing project folder.
+Launch `python -m cli.main`. Enter a descriptive project name when prompted. **Spaces are allowed** and the application converts the name into a folder-friendly slug: for example, `Autumn Morning Walk` becomes `projects/autumn-morning-walk/`. Confirm creation of a new project or reuse of an existing one.
 
-Each project has its own storyboard, analysis files, and video outputs. Reusing a project does not automatically erase its previous storyboard or video.
+Projects have separate storyboards, analysis records, and output videos. Reopening a project does not automatically delete existing files.
 
-### 2. Select photographs
+### 2. Choose photographs
 
-At **Photograph folder**, press **Enter** to browse for a folder, or paste its full path. The folder can have **any name**; it does not need to be called `ai-ready`. Supported photograph extensions are **JPG, JPEG, and PNG**. Review the numbered list of discovered photographs.
+At the **Photograph folder** prompt, press **Enter** to open the Windows folder picker or paste the full folder path. The folder may have **any name**; it does not need to be called `ai-ready`.
 
-### 3. Review the storyboard and contact sheet
+Supported formats are `.jpg`, `.jpeg`, and `.png` (case-insensitive). The CLI finds supported files **directly in the selected folder**, not recursively in subfolders, and displays a numbered list. By default, photographs are discovered in filename order.
 
-The CLI creates a `storyboard.csv` and a numbered `contact-sheet.jpg`. When an existing storyboard is detected, press **Enter** to reuse it or type **R** to regenerate it. Check the displayed total duration and the contact sheet before rendering. A regenerated storyboard can change ordering or timing, so review it before proceeding.
+### 3. Create or reuse the storyboard and contact sheet
 
-### 4. Optional local AI analysis
+The application creates `storyboard.csv` and `contact-sheet.jpg` in the named project folder. A new default storyboard assigns **3 seconds per photograph**. Review the printed total duration and numbered contact sheet before rendering.
 
-Answer **Y** to analyze photographs with the configured local Ollama model, or **N** to skip. The CLI provides an approval/review workflow for descriptions. AI output is a suggestion: review it rather than assuming every description is accurate. You can render a video without running AI analysis.
+If a storyboard already exists, press **Enter** to reuse it or type **R** to regenerate it. Regeneration saves a timestamped copy of the previous CSV under `storyboard-history/`. The existing storyboard must match the photographs discovered in the selected folder; if it does not, the CLI reports an error rather than silently replacing it.
+
+The CSV stores photo order and duration. This release is a guided CLI workflow, not an interactive drag-and-drop storyboard editor.
+
+### 4. Optionally analyze photographs with local AI
+
+Answer **Y** to **Run AI analysis for these photographs?** to analyze them through Ollama, or **N** to skip. The CLI presents descriptions for acceptance or editing, saves approved results, and can reuse earlier approvals. Batch analysis can be paused and resumed by rerunning the project; an `analysis-summary.json` file records approved and pending counts.
+
+AI descriptions can be inaccurate. Review them before accepting. If Ollama is unavailable, choose **N** and continue creating the video without AI.
 
 ### 5. Render the video
 
-Answer **Y** at **Render video now?** and select a mode:
+Answer **Y** to **Render video now?** and select:
 
-- **1 — Static photographs:** Standard still-image video.
-- **2 — Ken Burns motion:** Gentle zoom/pan movement; uses saved, approved AI motion settings where available, with fallback motion otherwise.
+- **1 — Static photographs:** A still-image video.
+- **2 — Ken Burns motion:** Gentle pan/zoom effects. Previously saved, human-approved motion settings may be used when found; otherwise the renderer uses its built-in fallback motion.
 
-Rendering produces `final-video.mp4`. Answer **N** to skip rendering; without an existing `final-video.mp4`, subsequent music/title stages will report that they are unavailable. That message is expected, not a crash.
+The base output is `final-video.mp4`, rendered in a **1080 × 1920 vertical (9:16)** format with the default settings. The CLI asks before replacing an existing base video.
 
-### 6. Optional background music
+**Current limitation:** The renderer's default approved-motion lookup is not explicitly scoped to the active named project by the main CLI. Consequently, motion approvals stored under a named project's own folder should **not** be assumed to load automatically. The built-in Ken Burns fallback remains available. This behavior is tracked for investigation; it is not a prerequisite for rendering.
 
-If a rendered video exists, choose whether to add music. Select an **MP3** by browsing or pasting a full path. The CLI produces `final-video-with-music.mp4`, preserving the original video. The music stage applies a short fade-in and fade-out.
+Answering **N** skips rendering. If no `final-video.mp4` already exists, later music and title steps will report that processing is unavailable. This is expected, not a crash.
 
-Only use audio you own or have permission to include, particularly for social media uploads.
+### 6. Optionally add MP3 background music
 
-### 7. Optional cinematic title
+When a base video exists, answer **Y** to add music. Press **Enter** to browse for an MP3 or paste its full path. The application produces `final-video-with-music.mp4` while retaining `final-video.mp4`. The audio processing uses a **1-second fade-in** and **2-second fade-out**, adjusted when necessary for short videos.
 
-If a video exists, choose whether to add a title. If a music version is available, you can title either the original video or the music version. Choose a locally suggested title (when available), enter your own title, or skip. The title is burned into a new `final-video-with-title.mp4`, using a lower-third style during the first few seconds.
+Use only music you own or are authorized to use, especially for social-media posts.
 
-**Which file should I share?** Use `final-video-with-title.mp4` if you added a title, `final-video-with-music.mp4` if you added music but no title, or `final-video.mp4` if you used neither. Inspect the chosen file before uploading it.
+### 7. Optionally add a cinematic title
 
-## Where files are saved
+When a base video exists, choose whether to add a title. If a music version exists, the CLI lets you choose between titling the original video and the music version (music is the default selection).
 
-Each named project lives under `projects/<project-name>/` in the repository root. Common outputs include:
+You can enter your own title, request a local AI suggestion, or skip the title. **AI title suggestions require both a working Ollama service and previously approved photo descriptions**; without those, enter a title yourself. A suggested title must be reviewed and accepted before use.
+
+The title is burned into `final-video-with-title.mp4` in a lower-third style during the **first four seconds**, with fade-in and fade-out. The original input video is preserved.
+
+**Which MP4 should I share?** Select `final-video-with-title.mp4` if you added a title; otherwise `final-video-with-music.mp4` if you added music; otherwise `final-video.mp4`. Preview the selected file before posting.
+
+## Project files and outputs
+
+Each project is stored under `projects/<project-slug>/` within the repository checkout. Example:
 
 ```text
 projects/
   autumn-morning-walk/
     storyboard.csv
+    storyboard-history/           # only after storyboard regeneration
     contact-sheet.jpg
-    analysis/                   # when AI analysis is used
-    final-video.mp4             # after rendering
-    final-video-with-music.mp4  # if music is added
-    final-video-with-title.mp4  # if a title is added
+    analysis/                     # approved photo descriptions, if used
+    analysis-summary.json         # after a batch AI-analysis run
+    final-video.mp4               # after rendering
+    final-video-with-music.mp4    # if music is added
+    final-video-with-title.mp4    # if a title is added
 ```
 
-Some files appear only after their corresponding step. Project data, photographs, generated media, and local music are excluded from Git by the supplied `.gitignore`. Keep personal media outside the repository when possible, and always inspect `git status` before publishing.
+Previously saved motion approval records may exist in a `motion/` directory when created through the separate motion-advisor workflow; see the current limitation under **Render the video**. Not every file or folder appears in every project.
+
+The supplied `.gitignore` excludes `projects/`, `music-library/`, generated video and audio formats, caches, and common local secret files. These exclusions help avoid accidental commits but are not a substitute for reviewing `git status` before publishing.
 
 ## Troubleshooting
 
 | Symptom | What to try |
 | --- | --- |
-| `No module named PIL` | Run `python -m pip install -r requirements.txt` using the same Python that launches the CLI. |
-| `ffmpeg` or `ffprobe` not found | Install FFmpeg with FFprobe, add its `bin` directory to `PATH`, reopen PowerShell, and run `ffmpeg -version` and `ffprobe -version`. |
-| No photographs found | Confirm the selected folder exists and contains `.jpg`, `.jpeg`, or `.png` files directly in the selected folder. |
-| Folder browser does not appear | Paste the full folder path at the prompt instead. |
-| Ollama connection/model error | Start Ollama, check `ollama list`, and install `qwen3.5:9b` if needed; or answer **N** to skip AI analysis. |
-| Existing storyboard prompt appears | Press **Enter** to reuse; type **R** only when you want to regenerate. |
-| Music/title processing unavailable | Render a video first, or confirm `final-video.mp4` exists in the current project's output folder. |
-| MP3 rejected | Select an existing `.mp3` file; other audio formats are not supported by the current picker. |
-| Title fails to render | Check that FFmpeg supports the `drawtext` filter (`ffmpeg -filters`) and that the configured font exists. The default font path is Windows-specific. |
-| A brief console window flashes | Current Windows subprocess calls use `CREATE_NO_WINDOW`; if flashing persists, record which stage triggered it. |
-| `No module named pytest` | For development tests only, install `pytest` with `python -m pip install pytest`. |
+| `python` not found | Install Python, confirm it is available on `PATH`, and reopen PowerShell. |
+| `No module named PIL` | Run `python -m pip install -r requirements.txt` with the same Python used to launch the CLI. |
+| `ffmpeg` or `ffprobe` not found | Install both tools, add the FFmpeg `bin` directory to `PATH`, reopen PowerShell, and verify `ffmpeg -version` and `ffprobe -version`. |
+| No photographs found | Check that the chosen folder directly contains JPG, JPEG, or PNG files; subfolders are not scanned. |
+| Windows folder or file picker unavailable | Paste the full path at the prompt instead. |
+| Existing storyboard does not match photos | Recheck the selected photograph folder and filenames; the CLI protects the existing storyboard instead of overwriting it. |
+| Existing storyboard prompt appears | Press **Enter** to reuse or **R** to regenerate with a backup. |
+| Ollama connection or model error | Start Ollama, check `ollama list`, install `qwen3.5:9b` if necessary, or skip AI analysis. |
+| AI title suggestion unavailable | Confirm that Ollama is running **and** approved photograph descriptions exist, or enter a custom title. |
+| Ken Burns motion does not reflect a saved AI recommendation | The main CLI may not locate approvals in the active named project's motion directory; fallback motion can still render. |
+| Music/title processing unavailable | Render a base video first or confirm `final-video.mp4` exists in the active project folder. |
+| MP3 selection rejected | Choose an existing `.mp3` file; the current picker does not accept other audio formats. |
+| Title rendering fails | Check that FFmpeg includes the `drawtext` filter (`ffmpeg -filters`) and that the configured Windows font exists. |
+| A brief console window flashes | Windows subprocess calls attempt to suppress extra console windows; note the stage if flashing persists. |
+| `No module named pytest` | For development tests only, run `python -m pip install pytest`. |
 
 ## Testing
 
-From the repository root, with `pytest` installed:
+Install `pytest` if you want to run the included development tests:
 
 ```powershell
+python -m pip install pytest
 python -m pytest -q
 ```
 
-The development environment reported **10 tests and 4 subtests passing** after the console-window update. This is not a guarantee of compatibility on every machine. Check the output MP4 in a video player before publishing.
+In the original development environment, **10 tests and 4 subtests passed** after the Windows console-window update. This is a historical test result, not a guarantee for every machine. Always play and inspect the resulting MP4 before publishing.
 
-## Privacy, safety, and limitations
+## Privacy, rights, and limitations
 
-- Video processing uses locally installed Python, Pillow, and FFmpeg. Optional AI analysis uses a locally configured Ollama endpoint; the application is not intended to upload your photographs to a cloud AI service.
-- Verify the model endpoint and any local configuration before processing private photographs. Other software or services you choose to use may have their own privacy policies.
-- The application is currently guided through the **CLI**; a polished GUI, automated installer, and broad cross-platform testing are not provided.
-- The cinematic-title default font is a Windows font; non-Windows environments may require code/configuration changes.
-- AI descriptions and title suggestions can be inaccurate. Users remain responsible for reviewing outputs and ensuring rights to photographs and music.
-- Existing outputs may require explicit confirmation before replacement. Keep backups of important projects.
+- Video processing uses locally installed Python, Pillow, and FFmpeg. The application's optional AI requests target a locally configured Ollama endpoint; it is **not designed to upload photographs to a cloud AI service**.
+- Verify your Ollama endpoint and other installed software before using sensitive photographs. Third-party software and services have their own terms and privacy behavior.
+- This is a **CLI application**, not a graphical editor. No Windows installer or broad cross-platform compatibility is provided in v0.10.
+- The title renderer uses a Windows-specific default font; other operating systems may need configuration changes.
+- AI-generated descriptions, titles, and motion advice may be incorrect or unsuitable; review and approve outputs yourself.
+- Users are responsible for having rights to the photographs, audio, fonts, and other media they distribute.
+- The CLI asks before replacing several existing video outputs; retain backups of important work.
 
 ## AI-assisted development and attribution
 
@@ -153,4 +181,4 @@ The project owner defined the goals, requirements, creative direction, workflows
 
 ## License
 
-Local Video Creator is distributed under the MIT License. See [LICENSE](LICENSE) for details.
+Local Video Creator is distributed under the **MIT License**. See [LICENSE](LICENSE) for the full terms. The software license does not grant rights to third-party photographs, music, fonts, or other media.
